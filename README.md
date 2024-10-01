@@ -1,4 +1,4 @@
-#Olist Sales Data Analysis Project
+# Olist Sales Data Analysis Project
 
 ## 1 - Objective
 The goal of this project is to perform a comprehensive sales data analysis for Olist, a Brazilian company. The idea was to make the analysis as close to a real-world business scenario as possible by fetching data using SQL and visualizing the insights with Power BI.
