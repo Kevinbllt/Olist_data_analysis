@@ -1,0 +1,89 @@
+-- Create backup tables before cleaning -- 
+CREATE TABLE backup_customers AS SELECT * FROM customers;
+CREATE TABLE backup_orders AS SELECT * FROM orders;
+CREATE TABLE backup_order_reviews AS SELECT * FROM order_reviews;
+CREATE TABLE backup_order_payments AS SELECT * FROM order_payments;
+CREATE TABLE backup_order_items AS SELECT * FROM order_items;
+CREATE TABLE backup_sellers AS SELECT * FROM sellers;
+CREATE TABLE backup_products AS SELECT * FROM products;
+CREATE TABLE backup_product_category_name_translation AS SELECT * FROM product_category_name_translation;
+
+    
+    
+-- Create backup tables before cleaning -- 
+-- Select the most important features for the project --
+CREATE TABLE merge_tables AS
+SELECT 
+    ord.order_status, 
+    ord.order_estimated_delivery_date,
+    cus.customer_zip_code_prefix, 
+    cus.customer_city, 
+    cus.customer_state,
+    or2.review_score,
+    op.payment_type,
+    op.payment_value,
+    oi.price,
+    oi.freight_value,
+    sel.seller_city,
+    sel.seller_state,
+    prod.product_category_name,
+    prod.product_weight_g,
+    prod.product_height_cm,
+    prod.product_width_cm,
+    eng.product_category_name_english 
+FROM customers AS cus
+INNER JOIN orders AS ord
+    ON ord.customer_id = cus.customer_id
+INNER JOIN order_reviews AS or2 
+    ON or2.order_id = ord.order_id
+INNER JOIN order_payments AS op 
+    ON op.order_id = ord.order_id
+INNER JOIN order_items AS oi 
+    ON oi.order_id = ord.order_id
+INNER JOIN sellers AS sel
+    ON sel.seller_id = oi.seller_id
+INNER JOIN products AS prod
+    ON prod.product_id = oi.product_id
+INNER JOIN product_category_name_translation AS eng 
+    ON eng.product_category_name = prod.product_category_name;
+   
+   
+-- Delete rows with missing values (beside weight, height and width columns) --
+DELETE FROM merge_tables
+WHERE 
+    order_status IS NULL 
+    OR order_estimated_delivery_date IS NULL 
+    OR customer_zip_code_prefix IS NULL 
+    OR customer_city IS NULL 
+    OR customer_state IS NULL 
+    OR review_score IS NULL 
+    OR payment_type IS NULL 
+    OR payment_value IS NULL 
+    OR price IS NULL 
+    OR freight_value IS NULL 
+    OR seller_city IS NULL 
+    OR seller_state IS NULL 
+    OR product_category_name IS NULL 
+    OR product_category_name_english IS NULL;
+
+-- Update rows with missing values from weight, height and width columns --
+UPDATE merge_tables
+SET 
+    product_weight_g = 'default_value',
+    product_height_cm = 'default_value',
+    product_width_cm = 'default_value'
+WHERE 
+    product_weight_g IS NULL
+    OR product_height_cm IS NULL
+    OR product_width_cm IS NULL;
+   
+-- All columns have the correct data format, no need to correct the data type -- 
+   
+ 
+-- Delete rows with negative values -- 
+DELETE FROM merge_tables mt
+WHERE 
+    review_score < 0
+    OR payment_value < 0
+    OR price < 0
+    OR freight_value <0;
